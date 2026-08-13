@@ -660,7 +660,7 @@ function Set-CodexMcpServer {
 
     $lines = @()
     if (Test-Path -LiteralPath $path) {
-        $rawLines = @(Get-Content -LiteralPath $path)
+        $rawLines = @(Get-Content -LiteralPath $path -Encoding utf8)
         if ($rawLines.Count -eq 1 -and [string]::IsNullOrEmpty($rawLines[0])) {
             $lines = @()
         }
@@ -695,7 +695,8 @@ function Set-CodexMcpServer {
         }
     }
 
-    Set-Content -LiteralPath $path -Value $lines -Encoding utf8
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllLines($path, [string[]]$lines, $utf8NoBom)
 }
 
 function Ensure-McpServer {
@@ -720,7 +721,7 @@ function Ensure-McpServer {
             'Codex' {
                 $codexDefinition = @{}
                 foreach ($key in $ServerDefinition.Keys) {
-                    if ($key -ne 'headers') {
+                    if ($key -notin @('headers', 'type')) {
                         $codexDefinition[$key] = $ServerDefinition[$key]
                     }
                 }
