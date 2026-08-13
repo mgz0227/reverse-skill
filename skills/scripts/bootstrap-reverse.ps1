@@ -857,7 +857,15 @@ if (Test-ReverseIsWindows) {
     $stderrLog = Join-Path $repoDir 'anything-analyzer-dev.err.log'
     Remove-Item -LiteralPath $stdoutLog, $stderrLog -Force -ErrorAction SilentlyContinue
 
-    Start-Process -FilePath $pnpm -ArgumentList @('dev') -WorkingDirectory $repoDir -WindowStyle Hidden -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog | Out-Null
+    $hadElectronRunAsNode = Test-Path Env:ELECTRON_RUN_AS_NODE
+    $electronRunAsNode = $env:ELECTRON_RUN_AS_NODE
+    try {
+        Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+        Start-Process -FilePath $pnpm -ArgumentList @('dev') -WorkingDirectory $repoDir -WindowStyle Hidden -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog | Out-Null
+    }
+    finally {
+        if ($hadElectronRunAsNode) { $env:ELECTRON_RUN_AS_NODE = $electronRunAsNode }
+    }
     if (-not (Wait-ForPort -Port ([int]$Definition.servicePort) -TimeoutSeconds 120)) {
         throw "anything-analyzer did not open port 23816 in time. Logs: $stdoutLog ; $stderrLog"
     }
