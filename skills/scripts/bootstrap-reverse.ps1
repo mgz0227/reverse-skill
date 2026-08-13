@@ -215,17 +215,20 @@ function Ensure-AnythingAnalyzerMcpConfig {
 
     $payload = [ordered]@{
         enabled     = $true
+        host        = '127.0.0.1'
         port        = $Port
         authEnabled = $true
         authToken   = $token
     }
+    $json = $payload | ConvertTo-Json -Depth 4
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
     foreach ($userDataPath in Get-AnythingAnalyzerUserDataPaths) {
         if (-not (Test-Path -LiteralPath $userDataPath)) {
             New-Item -ItemType Directory -Path $userDataPath -Force | Out-Null
         }
         $configPath = Join-Path $userDataPath 'mcp-server-config.json'
-        $payload | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $configPath -Encoding utf8
+        [System.IO.File]::WriteAllText($configPath, $json, $utf8NoBom)
     }
 
     return $token
