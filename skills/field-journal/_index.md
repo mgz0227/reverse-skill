@@ -6,9 +6,9 @@
 
 ## 统计
 
-- 真实项目数：18
+- 真实项目数：19
 - 种子参考数：17
-- 总条目数：35
+- 总条目数：36
 - 最近更新：2026-08-14
 
 ## 按场景分类
@@ -62,6 +62,7 @@
 ### 工具链与环境
 
 - [2026-08-14 Windows PowerShell 原生命令退出码 PR 审查](./2026-08-14_windows-powershell-native-exit-code-pr-review.md)
+- [2026-08-14 Codex 路由适配器供应链门禁](./2026-08-14_codex-router-adapter-supply-chain-gate.md)
 - [2026-08-08 平台无关结构化路由 PR 集成](./2026-08-08_client-neutral-structured-routing-pr-integration.md)
 - [2026-07-20_reverse-toolchain-windows-bootstrap](./2026-07-20_reverse-toolchain-windows-bootstrap.md)
 
@@ -75,6 +76,7 @@
 ### 平台无关路由与供应链门禁
 
 - [原生命令后立即保存退出码、Windows PowerShell 5.1 实宿主复现、PR head 固定](./2026-08-14_windows-powershell-native-exit-code-pr-review.md)
+- [仓库原位核心、显式薄适配器、按 capability 审批](./2026-08-14_codex-router-adapter-supply-chain-gate.md)
 - [单一 routing.json、多入口 parity、实际安装命令 pin](./2026-08-08_client-neutral-structured-routing-pr-integration.md)
 
 ### 固件自定义封装
@@ -85,6 +87,7 @@
 
 ### 多宿主安全技能路由包
 
+- [Codex 用户技能发现与最小权限适配器](./2026-08-14_codex-router-adapter-supply-chain-gate.md)
 - [核心/适配器边界与大 PR 选择性集成](./2026-08-08_client-neutral-structured-routing-pr-integration.md)
 
 ### Windows PowerShell 供应链引导脚本
