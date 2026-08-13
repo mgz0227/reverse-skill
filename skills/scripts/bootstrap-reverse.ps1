@@ -837,7 +837,7 @@ if (Test-ReverseIsWindows) {
             throw 'pnpm install failed for anything-analyzer.'
         }
 
-        & $pnpm rebuild electron esbuild better-sqlite3
+        & $pnpm rebuild electron esbuild
         if ($LASTEXITCODE -ne 0) {
             if (-not [string]::IsNullOrWhiteSpace($vsBuildToolsError)) {
                 throw "pnpm rebuild failed for anything-analyzer. Visual Studio Build Tools auto-install also failed earlier: $vsBuildToolsError"
