@@ -389,11 +389,23 @@ if (Test-Path -LiteralPath $kaliManifest) {
 # --- supply-chain pin gate: auto-install download sources MUST be pinned ---
 # 统一判定：pinnedVersion / pinnedCommit / pinPolicy 三选一；
 # github-release-* 额外接受 assetSha256 / preferApiDigest（GitHub 官方发布资产哈希）。
+# local-http-mcp 只有在不获取外部源码时才可免 pin。
 $pinKinds = @('pip-package', 'npm-mcp', 'npm-global', 'go-install', 'git-clone')
 foreach ($mf in @($skillsManifest, $kaliManifest)) {
     if (-not (Test-Path -LiteralPath $mf)) { continue }
     $mn = Split-Path $mf -Leaf
     $mc = Get-Content -LiteralPath $mf -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach ($dependencyProperty in @($mc.bootstrapDependencies.PSObject.Properties)) {
+        $dependency = $dependencyProperty.Value
+        $expectedSuffix = '(?:==|@)' + [regex]::Escape([string]$dependency.version) + '$'
+        if ([string]::IsNullOrWhiteSpace([string]$dependency.package) -or
+            [string]::IsNullOrWhiteSpace([string]$dependency.version) -or
+            [string]$dependency.package -notmatch $expectedSuffix) {
+            Bad "unpinned bootstrap dependency: $($dependencyProperty.Name) in $mn"
+        } else {
+            Ok "pinned bootstrap dependency $($dependencyProperty.Name) in $mn"
+        }
+    }
     foreach ($cap in $mc.capabilities) {
         if (-not $cap.canAutoInstall) { continue }
         $hasPin = ($cap.pinnedVersion -or $cap.pinnedCommit -or $cap.pinPolicy)
@@ -401,7 +413,10 @@ foreach ($mf in @($skillsManifest, $kaliManifest)) {
             'github-release-zip' { $hasPin = $hasPin -or $cap.assetSha256 -or $cap.preferApiDigest }
             'github-release-jar-wrapper' { $hasPin = $hasPin -or $cap.assetSha256 }
             'github-release-tar' { $hasPin = $hasPin -or $cap.assetSha256 -or $cap.preferApiDigest }
-            'local-http-mcp' { $hasPin = $true }   # 本地服务，不下载
+            'local-http-mcp' {
+                $fetchesExternalSource = $cap.repoUrl -or $cap.repo
+                $hasPin = (-not $fetchesExternalSource) -or $cap.pinnedCommit -or $cap.pinnedVersion
+            }
             'winget-package' { $hasPin = $hasPin } # winget-latest 属于 pinPolicy
             'apt-package' { $hasPin = $true }      # 发行版仓库自带（Kali 侧）
             'docker-image' { $hasPin = $true }     # fallback 通道
@@ -426,6 +441,58 @@ $idCheck += "HEAD packageRoot=$packageRoot"
 $idCheck += "fastapi-in-ops-deps=false"
 $idCheck -join [Environment]::NewLine | Set-Content (Join-Path $ScratchDir 'identity-check.txt') -Encoding UTF8
 Ok 'identity-check written'
+
+# Issue #77 — analysis decision framework anchors (MUST run before fail gate)
+$adf = Join-Path $PackageRoot "skills\ops\analysis-decision-framework.md"
+if (Test-Path -LiteralPath $adf) { Ok "analysis-decision-framework.md present (issue #77)" } else { Bad "analysis-decision-framework.md missing (issue #77)" }
+if (Test-Path -LiteralPath $adf) {
+    $adfText = Get-Content -LiteralPath $adf -Raw -Encoding UTF8
+    foreach ($pair in @(
+        @("R4*", "ADF R4* validated sufficiency"),
+        @("E-insufficient-evidence", "ADF E-insufficient-evidence"),
+        @("E-hypothesis-confirmed", "ADF hypothesis evidence"),
+        @("ungrounded", "ADF ungrounded flag"),
+        @("Not** a second master", "ADF not second master workflow"),
+        @("analysis-blindspot-cookbook", "ADF links blindspot cookbook")
+    )) {
+        if ($adfText -like ("*" + $pair[0] + "*")) { Ok $pair[1] } else { Bad ("missing: " + $pair[1]) }
+    }
+}
+$efp77 = Join-Path $PackageRoot "skills\ops\evidence-finding-path.md"
+if (Test-Path -LiteralPath $efp77) {
+    $efpText = Get-Content -LiteralPath $efp77 -Raw -Encoding UTF8
+    if ($efpText -like "*analysis-decision-framework*") { Ok "evidence-finding-path hooks ADF" } else { Bad "evidence-finding-path missing ADF hook" }
+    if ($efpText -like "*E-insufficient-evidence*") { Ok "evidence-finding-path R4* id" } else { Bad "evidence-finding-path missing E-insufficient-evidence" }
+} else { Bad "evidence-finding-path.md missing" }
+$wf77 = Join-Path $PackageRoot "skills\reverse-engineering\references\re-agent-workflow.md"
+if (Test-Path -LiteralPath $wf77) {
+    $wfText = Get-Content -LiteralPath $wf77 -Raw -Encoding UTF8
+    if ($wfText -like "*analysis-decision-framework*") { Ok "re-agent-workflow hooks ADF" } else { Bad "re-agent-workflow missing ADF hook" }
+    if ($wfText -like "*analysis-blindspot-cookbook*") { Ok "re-agent-workflow hooks blindspot cookbook" } else { Bad "re-agent-workflow missing blindspot cookbook hook" }
+} else { Bad "re-agent-workflow.md missing" }
+$rules77 = Join-Path $PackageRoot "RULES.md"
+if (Test-Path -LiteralPath $rules77) {
+    $rulesText = Get-Content -LiteralPath $rules77 -Raw -Encoding UTF8
+    if ($rulesText -like "*analysis-decision-framework*") { Ok "RULES.md hooks ADF" } else { Bad "RULES.md missing ADF hook" }
+} else { Bad "RULES.md missing" }
+
+# Issue #77 batch 2 — blindspot cookbook anchors
+$bsc = Join-Path $PackageRoot "skills\ops\analysis-blindspot-cookbook.md"
+if (Test-Path -LiteralPath $bsc) { Ok "analysis-blindspot-cookbook.md present (issue77 R52-R81)" } else { Bad "analysis-blindspot-cookbook.md missing (issue77 R52-R81)" }
+if (Test-Path -LiteralPath $bsc) {
+    $bscText = Get-Content -LiteralPath $bsc -Raw -Encoding UTF8
+    foreach ($pair in @(
+        @("R52", "BSC R52 Rust"),
+        @("E-rust-identified", "BSC E-rust-identified"),
+        @("E-vmp-protected", "BSC E-vmp-protected"),
+        @("E-llm-hallucination", "BSC E-llm-hallucination"),
+        @("E-kernel-protect-tamper", "BSC kernel detect-only id"),
+        @("Not** a third master", "BSC not third master workflow"),
+        @("no bypass tutorial", "BSC no bypass tutorial")
+    )) {
+        if ($bscText -like ("*" + $pair[0] + "*")) { Ok $pair[1] } else { Bad ("missing: " + $pair[1]) }
+    }
+}
 
 Write-Host "Scratch=$ScratchDir"
 if ($fail.Count -gt 0) {
