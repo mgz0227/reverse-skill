@@ -41,7 +41,22 @@
       "docsUrl": "https://www.pnfsoftware.com/jeb/",
       "canAutoInstall": false,
       "verifyCommand": "jeb_wincon",
-      "manualInstallHint": "JEB Pro is commercial. Obtain a valid license from PNF Software, install it manually, then run refresh-tool-index.ps1. Optional community MCP bridges must pass the skill-supply-chain review before registration."
+      "mcpNames": [
+        "jeb"
+      ],
+      "mcpCommand": "powershell",
+      "mcpArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "%SKILL_ROOT%\\apk-reverse\\scripts\\start-jeb-mcp.ps1"
+      ],
+      "servicePort": 8425,
+      "mcpProbe": "legacy-sse",
+      "mcpBridgePackage": "mcp-remote@0.1.38",
+      "mcpBridgeIntegrity": "sha512-w+JU4U3CfG29TawXR4JLNQ9d1Un5nT8AGI65f/juCaqUdF/V6fS7wE4o7xNPbB8X58o46hRXEJgYglQMAKQs4w==",
+      "manualInstallHint": "JEB Pro is commercial. Obtain a valid license from PNF Software and install it manually. JEB 5.35 exposes legacy SSE MCP; use apk-reverse/scripts/start-jeb-mcp.ps1 for headless startup and the pinned stdio bridge."
     },
     {
       "name": "frida",

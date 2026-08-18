@@ -362,6 +362,7 @@ function Get-ReverseToolCatalog {
             Fallbacks = @(
                 [pscustomobject]@{ Type = 'command'; Value = 'jeb_wincon' },
                 [pscustomobject]@{ Type = 'command'; Value = 'jeb' },
+                [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\JEB\jeb_wincon.bat') },
                 [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\JEB\jeb_wincon.exe') }
             )
         }
@@ -732,17 +733,48 @@ function Test-ReverseMcpHttp {
 
         [string]$TargetHost = '127.0.0.1',
 
-        [int]$TimeoutMs = 3000
+        [int]$TimeoutMs = 3000,
+
+        [ValidateSet('streamable-http', 'legacy-sse')]
+        [string]$Transport = 'streamable-http'
     )
 
     try {
-        $body = '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
         $uri = "http://${TargetHost}:$Port/mcp"
         $req = [System.Net.HttpWebRequest]::Create($uri)
-        $req.Method = 'POST'
-        $req.ContentType = 'application/json'
         $req.Timeout = $TimeoutMs
         $req.ReadWriteTimeout = $TimeoutMs
+
+        if ($Transport -eq 'legacy-sse') {
+            $req.Method = 'GET'
+            $req.Accept = 'text/event-stream'
+            $resp = $req.GetResponse()
+            $reader = New-Object System.IO.StreamReader($resp.GetResponseStream())
+            $eventName = ''
+            $eventData = ''
+            for ($i = 0; $i -lt 8; $i++) {
+                $line = $reader.ReadLine()
+                if ($null -eq $line) {
+                    break
+                }
+                if ($line.StartsWith('event:')) {
+                    $eventName = $line.Substring(6).Trim()
+                }
+                elseif ($line.StartsWith('data:')) {
+                    $eventData = $line.Substring(5).Trim()
+                }
+                if ([string]::IsNullOrWhiteSpace($line) -and $eventName -eq 'endpoint' -and $eventData -match '^https?://') {
+                    break
+                }
+            }
+            $reader.Close()
+            $resp.Close()
+            return $eventName -eq 'endpoint' -and $eventData -match '^https?://'
+        }
+
+        $body = '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+        $req.Method = 'POST'
+        $req.ContentType = 'application/json'
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($body)
         $req.ContentLength = $bytes.Length
         $reqStream = $req.GetRequestStream()
@@ -839,7 +871,8 @@ function Get-ReverseCapabilityState {
         $serviceOnline = Test-ReverseTcpPort -Port ([int]$definition.servicePort)
         # If TCP passes, attempt HTTP MCP protocol-level handshake for higher confidence
         if ($serviceOnline) {
-            $mcpHttpVerified = Test-ReverseMcpHttp -Port ([int]$definition.servicePort)
+            $probe = if ($definition.PSObject.Properties['mcpProbe']) { [string]$definition.mcpProbe } else { 'streamable-http' }
+            $mcpHttpVerified = Test-ReverseMcpHttp -Port ([int]$definition.servicePort) -Transport $probe
         }
     }
 

@@ -156,7 +156,8 @@ jadx --deobf -d jadx_out app.apk
 
 - JEB Pro 是商业软件，必须由用户自行取得并安装有效许可证；本包不会下载、破解或规避许可。
 - 仅在 `tool-index` 已确认本机 JEB 可用时调用；否则继续使用 `jadx`、`apktool`、Ghidra、IDA 或 radare2。
-- 第三方 JEB MCP bridge 不是本包依赖。安装前必须按 `../ops/skill-supply-chain.md` 审阅源码、权限、网络行为和版本，再由用户明确确认注册。
+- JEB 5.32+ 的内置 MCP 默认是 `http://localhost:8425/mcp` 上的 legacy SSE。GUI 可从 `File > Start/Stop the MCP Server` 启动；stdio 客户端应通过 `scripts/start-jeb-mcp.ps1` 以 headless JEB + stdio bridge 接入。
+- legacy SSE 适配仅允许 manifest 固定且已审计的 `mcp-remote` 版本；其他第三方 bridge 仍须按 `../ops/skill-supply-chain.md` 单独审阅并由用户确认。
 
 ### `apktool`
 
@@ -386,7 +387,7 @@ frida -U -f com.example.app -l hook.js
 |------|-----------|---------|------|
 | jadx | ✓ | GitHub Release ZIP | 自动下载解压到 `%USERPROFILE%\Tools\jadx\` |
 | apktool | ✓ | GitHub Release JAR + wrapper | 自动下载 jar 并生成 bat 到 `%USERPROFILE%\Tools\apktool\` |
-| JEB Pro | ✗ | 用户手动安装并提供有效许可证 | 可选的 Android / ARM 交叉验证工具；第三方 MCP bridge 需单独审计 |
+| JEB Pro | ✗ | 用户手动安装并提供有效许可证 | 内置 legacy SSE MCP；stdio 客户端使用已审计并固定版本的 bridge |
 | frida / frida-ps | ✓ | pip install frida-tools | 需要 Python 已安装 |
 | adb | ✓ | winget / fallback path | 自动安装 Android Platform-Tools |
 | zipalign | ✗ | 需手动安装 Android Build-Tools | `sdkmanager "build-tools;35.0.0"` |
