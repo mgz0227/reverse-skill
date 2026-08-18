@@ -28,6 +28,7 @@ $scriptRefs = @{
     'zipalign' = @('apk-reverse/scripts/rebuild-sign-install.ps1')
     'frida' = @('apk-reverse/scripts/frida-run.ps1')
     'frida-ps' = @('apk-reverse/scripts/frida-run.ps1')
+    'idalib-mcp' = @('ida-reverse/scripts/start.ps1')
     'r2' = @('radare2/scripts/recon.ps1')
     'rabin2' = @('radare2/scripts/recon.ps1')
     'rasm2' = @('radare2/SKILL.md')

@@ -128,6 +128,16 @@ function Get-ReverseToolCatalog {
             )
         }
         [pscustomobject]@{
+            Name = 'idalib-mcp'
+            Skill = 'ida-reverse'
+            Purpose = 'IDA Pro headless MCP server'
+            VersionArgs = @('--help')
+            Fallbacks = @(
+                [pscustomobject]@{ Type = 'command'; Value = 'idalib-mcp' },
+                [pscustomobject]@{ Type = 'command'; Value = 'ida-pro-mcp' }
+            )
+        }
+        [pscustomobject]@{
             Name = 'r2'
             Skill = 'radare2'
             Purpose = 'radare2 主分析器'
@@ -135,6 +145,8 @@ function Get-ReverseToolCatalog {
             Fallbacks = @(
                 [pscustomobject]@{ Type = 'command'; Value = 'r2' },
                 [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\radare2\bin\r2.exe') },
+                [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\radare2\bin\radare2.exe') },
+                [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\radare2\bin\r2.bat') },
                 [pscustomobject]@{ Type = 'path'; Value = (Join-Path $userProfile 'Tools\radare2\r2.exe') },
                 [pscustomobject]@{ Type = 'path'; Value = 'C:\Tools\radare2\bin\r2.exe' }
             )
